@@ -2,7 +2,6 @@ package process
 
 import (
 	"bytes"
-	"ehsm_kms/pkg/cfgstruct"
 	"flag"
 	"fmt"
 	"github.com/spf13/cast"
@@ -13,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"yema.dev/pkg/cfgstruct"
 )
 
 var DefaultCfgFilename = "config.yaml"

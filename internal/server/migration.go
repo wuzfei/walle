@@ -2,19 +2,18 @@ package server
 
 import (
 	"context"
-	"yema.dev/internal/model"
-	"yema.dev/pkg/log"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"os"
+	"yema.dev/internal/model"
 )
 
 type Migrate struct {
 	db  *gorm.DB
-	log *log.Logger
+	log *zap.Logger
 }
 
-func NewMigrate(db *gorm.DB, log *log.Logger) *Migrate {
+func NewMigrate(db *gorm.DB, log *zap.Logger) *Migrate {
 	return &Migrate{
 		db:  db,
 		log: log,

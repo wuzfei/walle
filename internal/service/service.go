@@ -16,7 +16,7 @@ type Service struct {
 
 func NewService(tm repository.Transaction, log *zap.Logger, sid *sid.Sid, jwt *jwt.JWT) *Service {
 	return &Service{
-		log: log,
+		log: log.Named("service"),
 		sid: sid,
 		jwt: jwt,
 		tm:  tm,

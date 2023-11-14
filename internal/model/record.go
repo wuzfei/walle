@@ -3,7 +3,7 @@ package model
 import (
 	"errors"
 	"time"
-	"yema.dev/app/model/field"
+	"yema.dev/internal/model/field"
 )
 
 const (

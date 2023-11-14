@@ -2,15 +2,15 @@ package server
 
 import (
 	"context"
-	"yema.dev/pkg/log"
+	"go.uber.org/zap"
 )
 
 type Job struct {
-	log *log.Logger
+	log *zap.Logger
 }
 
 func NewJob(
-	log *log.Logger,
+	log *zap.Logger,
 ) *Job {
 	return &Job{
 		log: log,

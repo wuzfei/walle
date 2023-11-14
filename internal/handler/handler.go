@@ -19,7 +19,7 @@ type Handler struct {
 
 func NewHandler(log *zap.Logger) *Handler {
 	return &Handler{
-		log: log,
+		log: log.Named("handler"),
 	}
 }
 

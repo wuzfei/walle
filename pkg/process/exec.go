@@ -2,7 +2,6 @@ package process
 
 import (
 	"context"
-	"ehsm_kms/pkg/cfgstruct"
 	"flag"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -16,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"yema.dev/pkg/cfgstruct"
 )
 
 var (

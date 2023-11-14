@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync"
 	"time"
-	"yema.dev/app/utils"
+	"yema.dev/internal/utils"
 )
 
 var (

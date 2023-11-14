@@ -14,6 +14,7 @@ type ServerRepository interface {
 	Update(ctx context.Context, user *model.Server) error
 	UpdateFields(ctx context.Context, m *model.Server, fields ...string) error
 	GetByID(ctx context.Context, id int64) (*model.Server, error)
+	GetBySpaceAndIDs(ctx context.Context, spaceId int64, ids []int64) (res []model.Server, err error)
 	DeleteByID(ctx context.Context, id int64) error
 	FindByHostIp(ctx context.Context, spaceId int64, user, host string, port int) (m model.Server, err error)
 	ClearProjects(ctx context.Context, id int64) error
@@ -70,6 +71,15 @@ func (r *serverRepository) GetByID(ctx context.Context, id int64) (*model.Server
 		return nil, err
 	}
 	return &m, nil
+}
+
+func (r *serverRepository) GetBySpaceAndIDs(ctx context.Context, spaceId int64, ids []int64) (res []model.Server, err error) {
+	res = make([]model.Server, 0)
+	if spaceId == 0 || len(ids) == 0 {
+		return
+	}
+	err = r.DB(ctx).Where("space_id = ? and id in ?", spaceId, ids).Find(&res).Error
+	return
 }
 
 func (r *serverRepository) DeleteByID(ctx context.Context, id int64) error {

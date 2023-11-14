@@ -7,6 +7,9 @@
 package wire
 
 import (
+	"github.com/google/wire"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 	"yema.dev/internal/handler"
 	"yema.dev/internal/repository"
 	"yema.dev/internal/server"
@@ -14,27 +17,48 @@ import (
 	"yema.dev/pkg/app"
 	"yema.dev/pkg/helper/sid"
 	"yema.dev/pkg/jwt"
-	"yema.dev/pkg/log"
+	"yema.dev/pkg/repo"
 	"yema.dev/pkg/server/http"
-	"github.com/google/wire"
-	"github.com/spf13/viper"
+	"yema.dev/pkg/ssh"
 )
 
 // Injectors from wire.go:
 
-func NewWire(viperViper *viper.Viper, logger *log.Logger) (*app.App, func(), error) {
-	jwtJWT := jwt.NewJwt(viperViper)
+func NewWire(logger *zap.Logger, db *gorm.DB, config *ssh.Config, repoConfig *repo.Config, httpConfig *http.Config, jwtConfig *jwt.Config) (*app.App, func(), error) {
+	jwtJWT := jwt.NewJwt(jwtConfig)
 	handlerHandler := handler.NewHandler(logger)
-	db := repository.NewDB(viperViper, logger)
-	client := repository.NewRedis(viperViper)
-	repositoryRepository := repository.NewRepository(db, client, logger)
+	repositoryRepository := repository.NewRepository(db, logger)
 	transaction := repository.NewTransaction(repositoryRepository)
 	sidSid := sid.NewSid()
 	serviceService := service.NewService(transaction, logger, sidSid, jwtJWT)
 	userRepository := repository.NewUserRepository(repositoryRepository)
 	userService := service.NewUserService(serviceService, userRepository)
 	userHandler := handler.NewUserHandler(handlerHandler, userService)
-	httpServer := server.NewHTTPServer(logger, viperViper, jwtJWT, userHandler)
+	spaceRepository := repository.NewSpaceRepository(repositoryRepository)
+	spaceService := service.NewSpaceService(serviceService, spaceRepository)
+	spaceHandler := handler.NewSpaceHandler(handlerHandler, spaceService)
+	serverRepository := repository.NewServerRepository(repositoryRepository)
+	sshSsh, err := ssh.NewSSH(config)
+	if err != nil {
+		return nil, nil, err
+	}
+	serverService := service.NewServerService(serviceService, serverRepository, sshSsh)
+	serverHandler := handler.NewServerHandler(handlerHandler, serverService)
+	environmentRepository := repository.NewEnvironmentRepository(repositoryRepository)
+	environmentService := service.NewEnvironmentService(serviceService, environmentRepository)
+	environmentHandler := handler.NewEnvironmentHandler(handlerHandler, environmentService)
+	projectRepository := repository.NewProjectRepository(repositoryRepository)
+	repos, err := repo.NewRepos(repoConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	projectService := service.NewProjectService(serviceService, projectRepository, serverRepository, sshSsh, repos)
+	projectHandler := handler.NewProjectHandler(handlerHandler, projectService)
+	deployRepository := repository.NewDeployRepository(repositoryRepository)
+	deployService := service.NewDeployService(serviceService, deployRepository, projectRepository, serverRepository, sshSsh, repos)
+	deployHandler := handler.NewDeployHandler(handlerHandler, deployService)
+	commonHandler := handler.NewCommonHandler(handlerHandler)
+	httpServer := server.NewHTTPServer(logger, jwtJWT, httpConfig, userHandler, spaceHandler, serverHandler, environmentHandler, projectHandler, deployHandler, commonHandler)
 	job := server.NewJob(logger)
 	appApp := newApp(httpServer, job)
 	return appApp, func() {
@@ -43,11 +67,13 @@ func NewWire(viperViper *viper.Viper, logger *log.Logger) (*app.App, func(), err
 
 // wire.go:
 
-var repositorySet = wire.NewSet(repository.NewDB, repository.NewRedis, repository.NewRepository, repository.NewTransaction, repository.NewUserRepository)
+var pkgSet = wire.NewSet(ssh.NewSSH, repo.NewRepos)
 
-var serviceSet = wire.NewSet(service.NewService, service.NewUserService)
+var repositorySet = wire.NewSet(repository.NewRepository, repository.NewTransaction, repository.NewUserRepository, repository.NewEnvironmentRepository, repository.NewSpaceRepository, repository.NewServerRepository, repository.NewProjectRepository, repository.NewDeployRepository)
 
-var handlerSet = wire.NewSet(handler.NewHandler, handler.NewUserHandler)
+var serviceSet = wire.NewSet(service.NewService, service.NewUserService, service.NewServerService, service.NewEnvironmentService, service.NewSpaceService, service.NewProjectService, service.NewDeployService)
+
+var handlerSet = wire.NewSet(handler.NewHandler, handler.NewUserHandler, handler.NewEnvironmentHandler, handler.NewSpaceHandler, handler.NewServerHandler, handler.NewProjectHandler, handler.NewDeployHandler, handler.NewCommonHandler)
 
 var serverSet = wire.NewSet(server.NewHTTPServer, server.NewJob, server.NewTask)
 

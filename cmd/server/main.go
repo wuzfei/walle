@@ -5,25 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/wuzfei/cfgstruct/cfgstruct"
-	"github.com/wuzfei/cfgstruct/process"
 	"github.com/wuzfei/go-helper/path"
 	"github.com/zeebo/errs"
-	log2 "log"
+	slog "log"
 	"os"
 	"path/filepath"
-	"yema.dev/app/api"
-	"yema.dev/app/config"
-	"yema.dev/app/migration"
-	db2 "yema.dev/app/pkg/db"
-	log3 "yema.dev/app/pkg/log"
-	"yema.dev/app/version"
+	"yema.dev/cmd/server/wire"
+	"yema.dev/internal/migration"
+	"yema.dev/pkg/cfgstruct"
 	"yema.dev/pkg/db"
 	"yema.dev/pkg/jwt"
 	"yema.dev/pkg/log"
+	"yema.dev/pkg/process"
 	"yema.dev/pkg/repo"
 	"yema.dev/pkg/server/http"
 	"yema.dev/pkg/ssh"
+	"yema.dev/pkg/version"
 )
 
 //go:generate stringer -type ErrCode -linecomment ./app/internal/errcode
@@ -46,10 +43,10 @@ type Config struct {
 }
 
 var (
-	runCfg       config.Config
-	setupCfg     config.Config
+	runCfg       Config
+	setupCfg     Config
 	migrationCfg struct {
-		config.Config
+		Config
 		Admin migration.Config
 	}
 )
@@ -90,7 +87,7 @@ var (
 )
 
 func main() {
-	log2.Println(version.Build.String())
+	slog.Println(version.Build.String())
 	defaultConfig := path.ApplicationDir("yema.dev", process.DefaultCfgFilename)
 	cfgstruct.SetupFlag(rootCmd, &configFile, "config", defaultConfig, "配置文件")
 	//根据环境读取默认配置
@@ -116,9 +113,19 @@ func main() {
 // cmdRun 运行
 func cmdRun(cmd *cobra.Command, args []string) (err error) {
 	ctx, _ := process.Ctx(cmd)
-	runCfg.Init()
-	apiServer := api.NewServer(&runCfg.Api, &web, &webAssets)
-	return apiServer.Run(ctx)
+	_log := log.NewLog(&migrationCfg.Log)
+	db, err := db.NewDB(&migrationCfg.Db, _log)
+	if err != nil {
+		return err
+	}
+
+	app, fn, err := wire.NewWire(_log, db, &runCfg.Ssh, &runCfg.Repo, &runCfg.Api, &runCfg.JWT)
+	if err != nil {
+		return err
+	}
+	defer fn()
+
+	return app.Run(ctx)
 }
 
 // cmdSetup 初始化数据库
@@ -143,8 +150,8 @@ func cmdConfig(cmd *cobra.Command, args []string) error {
 
 // cmdMigration 数据库迁移初始化
 func cmdMigration(cmd *cobra.Command, args []string) error {
-	_log := log3.NewLog(&migrationCfg.Log)
-	db, err := db2.NewGormDB(&migrationCfg.Db, _log)
+	_log := log.NewLog(&migrationCfg.Log)
+	db, err := db.NewDB(&migrationCfg.Db, _log)
 	if err != nil {
 		return err
 	}

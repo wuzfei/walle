@@ -3,17 +3,16 @@ package server
 import (
 	"context"
 	"github.com/go-co-op/gocron"
-	"yema.dev/pkg/log"
 	"go.uber.org/zap"
 	"time"
 )
 
 type Task struct {
-	log       *log.Logger
+	log       *zap.Logger
 	scheduler *gocron.Scheduler
 }
 
-func NewTask(log *log.Logger) *Task {
+func NewTask(log *zap.Logger) *Task {
 	return &Task{
 		log: log,
 	}

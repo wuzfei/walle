@@ -2,69 +2,63 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	apiV1 "yema.dev/api/v1"
-	"yema.dev/docs"
+	"go.uber.org/zap"
 	"yema.dev/internal/handler"
 	"yema.dev/internal/middleware"
+	"yema.dev/internal/model"
 	"yema.dev/pkg/jwt"
-	"yema.dev/pkg/log"
 	"yema.dev/pkg/server/http"
-	"github.com/spf13/viper"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func NewHTTPServer(
-	logger *log.Logger,
-	conf *viper.Viper,
+	log *zap.Logger,
 	jwt *jwt.JWT,
+	conf *http.Config,
+	assetsHandler *handler.AssetsHandler,
 	userHandler *handler.UserHandler,
+	spaceHandler *handler.SpaceHandler,
+	serverHandler *handler.ServerHandler,
+	environmentHandler *handler.EnvironmentHandler,
+	projectHandler *handler.ProjectHandler,
+	deployHandler *handler.DeployHandler,
+	commonHandler *handler.CommonHandler,
 ) *http.Server {
 	gin.SetMode(gin.DebugMode)
 	s := http.NewServer(
 		gin.Default(),
-		logger,
-		http.WithServerHost(conf.GetString("http.host")),
-		http.WithServerPort(conf.GetInt("http.port")),
+		log,
+		conf,
 	)
+	//注册静态路由
+	assetsHandler.Register(s.Engine)
 
-	// swagger doc
-	docs.SwaggerInfo.BasePath = "/v1"
-	s.GET("/swagger/*any", ginSwagger.WrapHandler(
-		swaggerfiles.Handler,
-		//ginSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", conf.GetInt("app.http.port"))),
-		ginSwagger.DefaultModelsExpandDepth(-1),
-	))
-
-	s.Use(
+	apiGroup := s.Group("/api",
 		middleware.CORSMiddleware(),
-		middleware.ResponseLogMiddleware(logger),
-		middleware.RequestLogMiddleware(logger),
-		//middleware.SignMiddleware(log),
+		middleware.RequestLogMiddleware(log.Named("middleware")),
 	)
-	s.GET("/", func(ctx *gin.Context) {
-		logger.WithContext(ctx).Info("hello")
-		apiV1.HandleSuccess(ctx, map[string]interface{}{
-			":)": "Thank you for using nunu!",
-		})
-	})
+	// No route group has permission
+	apiGroup.POST("/login", userHandler.Login)
+	apiGroup.POST("/refresh_token", userHandler.RefreshToken)
 
-	v1 := s.Group("/v1")
+	//需要登陆
+	authRouter := apiGroup.Group("", middleware.Auth(jwt, log))
 	{
 		// No route group has permission
-		noAuthRouter := v1.Group("/")
-		{
-			noAuthRouter.POST("/register", userHandler.Register)
-			noAuthRouter.POST("/login", userHandler.Login)
-		}
+		authRouter.POST("/logout", userHandler.Logout)
+		authRouter.GET("/user_info", userHandler.Profile)
+
+		superPermRouter := authRouter.Group("", middleware.Permission(userService, model.RoleSuper))
+		ownerPermRouter := authRouter.Group("", middleware.Permission(userService, model.RoleOwner))
+		masterPermRouter := authRouter.Group("", middleware.Permission(userService, model.RoleMaster))
+
 		// Non-strict permission routing group
-		noStrictAuthRouter := v1.Group("/").Use(middleware.NoStrictAuth(jwt, logger))
+		noStrictAuthRouter := apiGroup.Group("/").Use(middleware.NoStrictAuth(jwt, logger))
 		{
 			noStrictAuthRouter.GET("/user", userHandler.GetProfile)
 		}
 
 		// Strict permission routing group
-		strictAuthRouter := v1.Group("/").Use(middleware.StrictAuth(jwt, logger))
+		strictAuthRouter := apiGroup.Group("/").Use(middleware.StrictAuth(jwt, logger))
 		{
 			strictAuthRouter.PUT("/user", userHandler.UpdateProfile)
 		}

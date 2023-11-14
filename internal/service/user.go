@@ -36,12 +36,12 @@ type userService struct {
 	*Service
 }
 
-func (s *userService) Login(ctx context.Context, req *user.LoginReq) (*user.LoginRes, error) {\
+func (s *userService) Login(ctx context.Context, req *user.LoginReq) (*user.LoginRes, error) {
 	m, err := s.userRepo.GetByEmail(ctx, req.Email)
-	if err != nil  {
+	if err != nil {
 		return nil, err
 	}
-	if m == nil ||  m.Status.IsDisable() {
+	if m == nil || m.Status.IsDisable() {
 		return nil, errcode.ErrUnauthorized
 	}
 	if bcrypt.CompareHashAndPassword(m.Password, []byte(req.Password)) != nil {
@@ -77,7 +77,7 @@ func (s *userService) Login(ctx context.Context, req *user.LoginReq) (*user.Logi
 	return &res, nil
 }
 
-func (s *userService) GetProfile(ctx context.Context, req *api.SpaceWithId) ( *user.ProfileRes,  error) {
+func (s *userService) GetProfile(ctx context.Context, req *api.SpaceWithId) (*user.ProfileRes, error) {
 	m, err := s.userRepo.GetByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
