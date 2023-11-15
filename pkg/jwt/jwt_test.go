@@ -8,8 +8,8 @@ import (
 
 func TestJwt(t *testing.T) {
 	j := NewJwt(&Config{
-		TokenExpire:        time.Second + 600,
-		RefreshTokenExpire: time.Second + 6000,
+		TokenExpire:        time.Second * 600,
+		RefreshTokenExpire: time.Second * 6000,
 		Key:                "afweaf",
 	})
 	s, ts, err := j.CreateToken(TokenPayload{
@@ -20,12 +20,11 @@ func TestJwt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(s, ts, err)
 
 	tp, err := j.ValidateToken(s)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(tp.Email, err)
+	fmt.Println(tp.Email, time.Unix(ts, 0))
 
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// AssetsHandler 静态文件处理
 type AssetsHandler struct {
 	rootFs   *embed.FS
 	assetsFs *embed.FS
@@ -21,7 +22,8 @@ func NewAssetsHandler(rootFs, assetsFs *embed.FS) *AssetsHandler {
 	}
 }
 
-func (h *AssetsHandler) Register(e *gin.Engine) {
+// Register 注册到路由
+func (h *AssetsHandler) Register(e gin.IRouter) {
 	//这三个是静态文件的路由
 	e.GET("/", func(ctx *gin.Context) {
 		fileHandle(ctx, h.rootFs, "index.html")
@@ -35,10 +37,9 @@ func (h *AssetsHandler) Register(e *gin.Engine) {
 	e.GET("/assets/*file", func(ctx *gin.Context) {
 		fileHandle(ctx, h.assetsFs, "assets"+ctx.Param("file"))
 	})
-
 }
 
-// 静态文件处理
+// fileHandle 静态文件读取
 func fileHandle(ctx *gin.Context, fs *embed.FS, file string) {
 	file = "web/dist/" + strings.TrimPrefix(file, "/")
 	f, err := fs.Open(file)

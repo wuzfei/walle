@@ -5,7 +5,7 @@ import { type PluginOption } from 'vite';
 import { getEnvConfig } from '../utils/env';
 import { createContentHash } from '../utils/hash';
 
-const GLOBAL_CONFIG_FILE_NAME = '_app.config.js';
+const GLOBAL_CONFIG_FILE_NAME = 'app.config.js';
 const PLUGIN_NAME = 'app-config';
 
 async function createAppConfigPlugin({

@@ -17,6 +17,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
 	DeleteByID(ctx context.Context, id int64) error
 	GetMemberSpaces(ctx context.Context, id int64) ([]*model.Member, error)
+	GetMemberBySpaceAndUserId(ctx context.Context, spaceId, userId int64) (res *model.Member, err error)
 }
 
 func NewUserRepository(r *Repository) UserRepository {
@@ -94,5 +95,11 @@ func (r *userRepository) List(ctx context.Context, kw string, scopesFn ...func(*
 		return
 	}
 	err = db.Scopes(scopesFn...).Find(&res).Error
+	return
+}
+
+// GetMemberBySpaceAndUserId 获取列表
+func (r *userRepository) GetMemberBySpaceAndUserId(ctx context.Context, spaceId, userId int64) (res *model.Member, err error) {
+	err = r.DB(ctx).Where(model.Member{SpaceId: spaceId, UserId: userId}).First(&res).Error
 	return
 }

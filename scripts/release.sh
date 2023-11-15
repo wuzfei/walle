@@ -30,7 +30,7 @@ fi
 
 echo Running "go $@"
 exec go "$1" -ldflags \
-  "-w -s -X yema.dev/app/version.buildTimestamp=$TIMESTAMP
-   -X yema.dev/app/version.buildCommitHash=$COMMIT
-   -X yema.dev/app/version.buildVersion=$VERSION
-   -X yema.dev/app/version.buildRelease=$RELEASE" "${@:2}"
+  "-w -s -X yema.dev/pkg/version.buildTimestamp=$TIMESTAMP
+   -X yema.dev/pkg/version.buildCommitHash=$COMMIT
+   -X yema.dev/pkg/version.buildVersion=$VERSION
+   -X yema.dev/pkg/version.buildRelease=$RELEASE" "${@:2}"

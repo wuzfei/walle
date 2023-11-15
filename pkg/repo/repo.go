@@ -24,15 +24,15 @@ type Repos struct {
 }
 
 type Config struct {
-	RepoDir string `help:"代码本地存放目录" devDefault:"$ROOT/runtime/warehouse" default:"/var/lib/walle/warehouse"`
+	RootDir string `help:"本地代码存放目录" devDefault:"$ROOT/runtime/warehouse" default:"/var/lib/walle/warehouse"`
 	Git     GitConfig
 	Svn     SvnConfig
 }
 
-func NewRepos(cfg *Config) (*Repos, error) {
+func NewRepos(cfg *Config) *Repos {
 	return &Repos{
 		config: cfg,
-	}, nil
+	}
 }
 
 type Tag struct {
@@ -66,9 +66,9 @@ type Repo interface {
 func (r *Repos) New(repoType TypeRepo, repoUrl, projectName string) (Repo, error) {
 	switch repoType {
 	case GitRepo:
-		return NewGit(&r.config.Git, repoUrl, filepath.Join(r.config.RepoDir, projectName))
+		return NewGit(&r.config.Git, repoUrl, filepath.Join(r.config.RootDir, projectName))
 	case SvnRepo:
-		return NewSvn(&r.config.Svn, repoUrl, filepath.Join(r.config.RepoDir, projectName))
+		return NewSvn(&r.config.Svn, repoUrl, filepath.Join(r.config.RootDir, projectName))
 	}
 	return nil, ErrRepo.New("仓库类型不支持")
 }

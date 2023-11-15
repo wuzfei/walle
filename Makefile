@@ -3,21 +3,6 @@ GOOS ?= linux
 GOARCH ?= amd64
 GOPATH ?= $(shell go env GOPATH)
 NODE_VERSION ?= 16.11.1
-COMPOSE_PROJECT_NAME := ${TAG}-$(shell git rev-parse --abbrev-ref HEAD)
-BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
-GIT_TAG := $(shell git rev-parse --short HEAD)
-ifeq (${BRANCH_NAME},main)
-	TAG    := ${GIT_TAG}-go${GO_VERSION}
-	TRACKED_BRANCH := true
-	LATEST_TAG := latest
-else
-	TAG := ${GIT_TAG}-${BRANCH_NAME}-go${GO_VERSION}
-	ifneq (,$(findstring release-,$(BRANCH_NAME)))
-		TRACKED_BRANCH := true
-		LATEST_TAG := ${BRANCH_NAME}-latest
-	endif
-endif
-CUSTOMTAG ?=
 
 
 FILEEXT :=
@@ -55,35 +40,20 @@ bootstrap:
 	go run ./cmd/migration
 	nunu run ./cmd/server
 
-.PHONY: mock
-mock:
-	mockgen -source=internal/service/user.go -destination test/mocks/service/user.go
-	mockgen -source=internal/repository/user.go -destination test/mocks/repository/user.go
-	mockgen -source=internal/repository/repository.go -destination test/mocks/repository/repository.go
-
-.PHONY: test
-test:
-	go test -coverpkg=./internal/handler,./internal/service,./internal/repository -coverprofile=./coverage.out ./test/server/...
-	go tool cover -html=./coverage.out -o coverage.html
-
 .PHONY: build
 build:
 	go build -ldflags="-s -w" -o ./bin/server ./cmd/server
 
-.PHONY: docker
-docker:
-	docker build -f deploy/build/Dockerfile --build-arg APP_RELATIVE_PATH=./cmd/job -t 1.1.1.1:5000/demo-job:v1 .
-	docker run --rm -i 1.1.1.1:5000/demo-job:v1
 
 .PHONY: build-web-deps
 build-web-deps: ## 安装web依赖包
-	cd web && npm ci --registry https://registry.npm.taobao.org
+	cd web && pnpm install #--registry https://registry.npm.taobao.org
 
 ##@ Build
 
 .PHONY: web
 web: ## 编译构建web
-	cd web && pnpm install --registry https://registry.npm.taobao.org && pnpm run build
+	cd web && pnpm install && pnpm run build
 
 .PHONY: backend
 backend: ## 编译构建api

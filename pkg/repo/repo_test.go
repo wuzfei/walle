@@ -9,7 +9,7 @@ var dir = "/tmp/test_git"
 //var url = "http://code.nextstorage.cn/storj/punch.git"
 
 var testConfig Config = Config{
-	RepoDir: "/Users/wuxin/worker/yema.dev/warehouse",
+	RootDir: "/Users/wuxin/worker/yema.dev/warehouse",
 	Git: GitConfig{
 		Username:           "git",
 		Password:           "C-Bp2FAS2yBzYCuE7ECj",

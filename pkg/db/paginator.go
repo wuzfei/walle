@@ -38,7 +38,7 @@ func (p *Paginator) PageQuery() func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-// SetInfinite 不限制分页，即获取所有结果
-func (p *Paginator) SetInfinite() {
+// Infinite 不限制分页，即获取所有结果
+func (p *Paginator) Infinite() {
 	p.infinite = true
 }

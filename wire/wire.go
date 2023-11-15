@@ -6,12 +6,12 @@ package wire
 import (
 	"github.com/google/wire"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"yema.dev/internal/handler"
 	"yema.dev/internal/repository"
 	"yema.dev/internal/server"
 	"yema.dev/internal/service"
 	"yema.dev/pkg/app"
+	"yema.dev/pkg/db"
 	"yema.dev/pkg/helper/sid"
 	"yema.dev/pkg/jwt"
 	"yema.dev/pkg/repo"
@@ -20,6 +20,7 @@ import (
 )
 
 var pkgSet = wire.NewSet(
+	db.NewDB,
 	ssh.NewSSH,
 	repo.NewRepos,
 )
@@ -70,7 +71,7 @@ func newApp(httpServer *http.Server, job *server.Job) *app.App {
 	)
 }
 
-func NewWire(*zap.Logger, *gorm.DB, *handler.AssetsHandler, *ssh.Config, *repo.Config, *http.Config, *jwt.Config) (*app.App, func(), error) {
+func NewWire(*zap.Logger, *handler.AssetsHandler, *db.Config, *ssh.Config, *repo.Config, *http.Config, *jwt.Config) (*app.App, func(), error) {
 	panic(wire.Build(
 		pkgSet,
 		repositorySet,

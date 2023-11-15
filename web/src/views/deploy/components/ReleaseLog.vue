@@ -1,12 +1,12 @@
 <template>
   <div>
     <a-card title="" v-loading="loadingRef">
-      <Steps
+      <!--Steps
         :current="StepCurrent"
         :serverList="StepServerList"
         :status="StepStatus"
         v-if="StepServerList.length > 0"
-      />
+      /-->
       <a-tabs :style="{ minHeight: '400px' }" v-model:activeKey="activeKey">
         <a-tab-pane
           class="text-white bg-gray-700"
@@ -31,7 +31,7 @@
   import { useWebSocket } from '@vueuse/core';
   import { getDeployConsoleWs, detailDeploy, startDeploy } from '/@/api/deploy';
   import { useUserStore } from '/@/store/modules/user';
-  import Steps from './components/Steps.vue';
+  //import Steps from 'Steps.vue';
 
   const props = defineProps({
     current: { type: Number },

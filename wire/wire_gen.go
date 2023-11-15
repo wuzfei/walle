@@ -9,12 +9,12 @@ package wire
 import (
 	"github.com/google/wire"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"yema.dev/internal/handler"
 	"yema.dev/internal/repository"
 	"yema.dev/internal/server"
 	"yema.dev/internal/service"
 	"yema.dev/pkg/app"
+	"yema.dev/pkg/db"
 	"yema.dev/pkg/helper/sid"
 	"yema.dev/pkg/jwt"
 	"yema.dev/pkg/repo"
@@ -24,21 +24,25 @@ import (
 
 // Injectors from wire.go:
 
-func NewWire(logger *zap.Logger, db *gorm.DB, assetsHandler *handler.AssetsHandler, config *ssh.Config, repoConfig *repo.Config, httpConfig *http.Config, jwtConfig *jwt.Config) (*app.App, func(), error) {
+func NewWire(logger *zap.Logger, assetsHandler *handler.AssetsHandler, config *db.Config, sshConfig *ssh.Config, repoConfig *repo.Config, httpConfig *http.Config, jwtConfig *jwt.Config) (*app.App, func(), error) {
 	jwtJWT := jwt.NewJwt(jwtConfig)
+	gormDB, err := db.NewDB(config, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	repositoryRepository := repository.NewRepository(gormDB, logger)
+	userRepository := repository.NewUserRepository(repositoryRepository)
 	handlerHandler := handler.NewHandler(logger)
-	repositoryRepository := repository.NewRepository(db, logger)
 	transaction := repository.NewTransaction(repositoryRepository)
 	sidSid := sid.NewSid()
 	serviceService := service.NewService(transaction, logger, sidSid, jwtJWT)
-	userRepository := repository.NewUserRepository(repositoryRepository)
 	userService := service.NewUserService(serviceService, userRepository)
 	userHandler := handler.NewUserHandler(handlerHandler, userService)
 	spaceRepository := repository.NewSpaceRepository(repositoryRepository)
 	spaceService := service.NewSpaceService(serviceService, spaceRepository)
 	spaceHandler := handler.NewSpaceHandler(handlerHandler, spaceService)
 	serverRepository := repository.NewServerRepository(repositoryRepository)
-	sshSsh, err := ssh.NewSSH(config)
+	sshSsh, err := ssh.NewSSH(sshConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -48,17 +52,14 @@ func NewWire(logger *zap.Logger, db *gorm.DB, assetsHandler *handler.AssetsHandl
 	environmentService := service.NewEnvironmentService(serviceService, environmentRepository)
 	environmentHandler := handler.NewEnvironmentHandler(handlerHandler, environmentService)
 	projectRepository := repository.NewProjectRepository(repositoryRepository)
-	repos, err := repo.NewRepos(repoConfig)
-	if err != nil {
-		return nil, nil, err
-	}
+	repos := repo.NewRepos(repoConfig)
 	projectService := service.NewProjectService(serviceService, projectRepository, serverRepository, sshSsh, repos)
 	projectHandler := handler.NewProjectHandler(handlerHandler, projectService)
 	deployRepository := repository.NewDeployRepository(repositoryRepository)
 	deployService := service.NewDeployService(serviceService, deployRepository, projectRepository, serverRepository, sshSsh, repos)
 	deployHandler := handler.NewDeployHandler(handlerHandler, deployService)
 	commonHandler := handler.NewCommonHandler(handlerHandler)
-	httpServer := server.NewHTTPServer(logger, jwtJWT, httpConfig, assetsHandler, userHandler, spaceHandler, serverHandler, environmentHandler, projectHandler, deployHandler, commonHandler)
+	httpServer := server.NewHTTPServer(logger, jwtJWT, httpConfig, assetsHandler, userRepository, userHandler, spaceHandler, serverHandler, environmentHandler, projectHandler, deployHandler, commonHandler)
 	job := server.NewJob(logger)
 	appApp := newApp(httpServer, job)
 	return appApp, func() {
@@ -67,7 +68,7 @@ func NewWire(logger *zap.Logger, db *gorm.DB, assetsHandler *handler.AssetsHandl
 
 // wire.go:
 
-var pkgSet = wire.NewSet(ssh.NewSSH, repo.NewRepos)
+var pkgSet = wire.NewSet(db.NewDB, ssh.NewSSH, repo.NewRepos)
 
 var repositorySet = wire.NewSet(repository.NewRepository, repository.NewTransaction, repository.NewUserRepository, repository.NewEnvironmentRepository, repository.NewSpaceRepository, repository.NewServerRepository, repository.NewProjectRepository, repository.NewDeployRepository)
 

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wuzfei/go-helper/path"
 	"github.com/zeebo/errs"
+	"go.uber.org/zap"
 	slog "log"
 	"os"
 	"path/filepath"
@@ -44,8 +45,7 @@ type Config struct {
 }
 
 var (
-	runCfg       Config
-	setupCfg     Config
+	cfg          Config
 	migrationCfg struct {
 		Config
 		Admin migration.Config
@@ -103,9 +103,9 @@ func main() {
 	rootCmd.AddCommand(setupCmd)
 	rootCmd.AddCommand(migrationCmd)
 	rootCmd.AddCommand(versionCmd)
-	process.Bind(runCmd, &runCfg, defaults, cfgstruct.ConfigFile(configFile), envHome, rootDir)
-	process.Bind(configCmd, &runCfg, defaults, cfgstruct.ConfigFile(configFile), envHome, rootDir)
-	process.Bind(setupCmd, &setupCfg, defaults, cfgstruct.ConfigFile(configFile), envHome, cfgstruct.SetupMode(), rootDir)
+	process.Bind(runCmd, &cfg, defaults, cfgstruct.ConfigFile(configFile), envHome, rootDir)
+	process.Bind(configCmd, &cfg, defaults, cfgstruct.ConfigFile(configFile), envHome, rootDir)
+	process.Bind(setupCmd, &cfg, defaults, cfgstruct.ConfigFile(configFile), envHome, cfgstruct.SetupMode(), rootDir)
 	process.Bind(migrationCmd, &migrationCfg, defaults, cfgstruct.ConfigFile(configFile), envHome, rootDir)
 	process.Bind(versionCmd, &struct{}{}, defaults)
 	process.Exec(rootCmd)
@@ -115,18 +115,16 @@ func main() {
 func cmdRun(cmd *cobra.Command, args []string) (err error) {
 	ctx, _ := process.Ctx(cmd)
 	_log := log.NewLog(&migrationCfg.Log)
-	db, err := db.NewDB(&migrationCfg.Db, _log)
-	if err != nil {
-		return err
-	}
-
-	app, fn, err := wire.NewWire(_log, db, handler.NewAssetsHandler(&web, &webAssets), &runCfg.Ssh, &runCfg.Repo, &runCfg.Api, &runCfg.JWT)
+	app, fn, err := wire.NewWire(_log, handler.NewAssetsHandler(&web, &webAssets), &cfg.Db, &cfg.Ssh, &cfg.Repo, &cfg.Api, &cfg.JWT)
 	if err != nil {
 		return err
 	}
 	defer fn()
 
-	return app.Run(ctx)
+	if err = app.Run(ctx); err != nil {
+		_log.Error("app.Run error", zap.Error(err))
+	}
+	return nil
 }
 
 // cmdSetup 初始化数据库
@@ -144,7 +142,7 @@ func cmdVersion(cmd *cobra.Command, args []string) error {
 func cmdConfig(cmd *cobra.Command, args []string) error {
 	fmt.Printf("当前运行环境：[%s]\n", cfgstruct.DefaultsType())
 	fmt.Println("当前配置文件路径：", configFile)
-	output, _ := json.MarshalIndent(runCfg, "", " ")
+	output, _ := json.MarshalIndent(cfg, "", " ")
 	fmt.Println(string(output))
 	return nil
 }
