@@ -142,7 +142,7 @@ func (s *deployService) Audit(ctx context.Context, req *deploy.AuditReq) (err er
 		m.Status = model.TaskStatusReject
 	}
 	m.AuditTime = sql.NullTime{Time: time.Now(), Valid: true}
-	return s.deployRepo.UpdateFields(ctx, m, "status", "audit_user_id", "audit_time")
+	return s.deployRepo.Update(ctx, m, "status", "audit_user_id", "audit_time")
 }
 
 // Release 发布

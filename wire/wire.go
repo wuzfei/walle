@@ -34,6 +34,7 @@ var repositorySet = wire.NewSet(
 	repository.NewServerRepository,
 	repository.NewProjectRepository,
 	repository.NewDeployRepository,
+	repository.NewMemberRepository,
 )
 
 var serviceSet = wire.NewSet(
@@ -44,6 +45,7 @@ var serviceSet = wire.NewSet(
 	service.NewSpaceService,
 	service.NewProjectService,
 	service.NewDeployService,
+	service.NewMemberService,
 )
 
 var handlerSet = wire.NewSet(
@@ -55,6 +57,7 @@ var handlerSet = wire.NewSet(
 	handler.NewProjectHandler,
 	handler.NewDeployHandler,
 	handler.NewCommonHandler,
+	handler.NewMemberHandler,
 )
 
 var serverSet = wire.NewSet(

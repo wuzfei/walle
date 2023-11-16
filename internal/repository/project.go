@@ -9,8 +9,7 @@ import (
 type ProjectRepository interface {
 	List(ctx context.Context, req *project.ListReq) (total int64, list []*model.Project, err error)
 	Create(ctx context.Context, m *model.Project) error
-	Update(ctx context.Context, user *model.Project) error
-	UpdateFields(ctx context.Context, m *model.Project, fields ...string) error
+	Update(ctx context.Context, m *model.Project, fields ...string) error
 	GetByID(ctx context.Context, id int64) (*model.Project, error)
 	DeleteByID(ctx context.Context, id int64) error
 	ClearServers(ctx context.Context, id int64) error
@@ -43,36 +42,20 @@ func (r *projectRepository) List(ctx context.Context, req *project.ListReq) (tot
 }
 
 func (r *projectRepository) Create(ctx context.Context, m *model.Project) error {
-	if err := r.DB(ctx).Create(m).Error; err != nil {
-		return err
-	}
-	return nil
+	return r.DB(ctx).Create(m).Error
 }
 
-func (r *projectRepository) Update(ctx context.Context, m *model.Project) error {
-	if err := r.DB(ctx).Save(m).Error; err != nil {
-		return err
+func (r *projectRepository) Update(ctx context.Context, m *model.Project, fields ...string) error {
+	_db := r.DB(ctx)
+	if len(fields) > 0 {
+		_db = _db.Select(fields)
 	}
-	return nil
+	return _db.Where("id = ?", m.ID).Updates(m).Error
 }
 
-func (r *projectRepository) UpdateFields(ctx context.Context, m *model.Project, fields ...string) error {
-	if err := r.DB(ctx).Select(fields).Where("id = ?", m.ID).
-		Updates(m).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *projectRepository) GetByID(ctx context.Context, id int64) (*model.Project, error) {
-	var m model.Project
-	if err := r.DB(ctx).Where("id = ?", id).Preload("Servers").Preload("Environment").First(&m).Error; err != nil {
-		//if errors.Is(err, gorm.ErrRecordNotFound) {
-		//	return nil, errcode.ErrNotFound
-		//}
-		return nil, err
-	}
-	return &m, nil
+func (r *projectRepository) GetByID(ctx context.Context, id int64) (m *model.Project, err error) {
+	err = r.DB(ctx).Where("id = ?", id).Preload("Servers").Preload("Environment").First(&m).Error
+	return
 }
 
 func (r *projectRepository) DeleteByID(ctx context.Context, id int64) error {

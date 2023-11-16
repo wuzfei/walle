@@ -138,7 +138,7 @@ func (s *projectService) Update(ctx context.Context, req *project.UpdateReq) err
 		m.Servers = servers
 		_fields := req.Fields()
 		_fields = append(_fields, "Servers")
-		return s.projectRepo.UpdateFields(ctx, m, _fields...)
+		return s.projectRepo.Update(ctx, m, _fields...)
 	})
 }
 

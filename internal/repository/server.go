@@ -11,8 +11,7 @@ import (
 type ServerRepository interface {
 	List(ctx context.Context, req *server.ListReq) (total int64, res []*model.Server, err error)
 	Create(ctx context.Context, m *model.Server) error
-	Update(ctx context.Context, user *model.Server) error
-	UpdateFields(ctx context.Context, m *model.Server, fields ...string) error
+	Update(ctx context.Context, m *model.Server, fields ...string) error
 	GetByID(ctx context.Context, id int64) (*model.Server, error)
 	GetBySpaceAndIDs(ctx context.Context, spaceId int64, ids []int64) (res []model.Server, err error)
 	DeleteByID(ctx context.Context, id int64) error
@@ -41,36 +40,20 @@ func (r *serverRepository) List(ctx context.Context, req *server.ListReq) (total
 }
 
 func (r *serverRepository) Create(ctx context.Context, m *model.Server) error {
-	if err := r.DB(ctx).Create(m).Error; err != nil {
-		return err
-	}
-	return nil
+	return r.DB(ctx).Create(m).Error
 }
 
-func (r *serverRepository) Update(ctx context.Context, m *model.Server) error {
-	if err := r.DB(ctx).Save(m).Error; err != nil {
-		return err
+func (r *serverRepository) Update(ctx context.Context, m *model.Server, fields ...string) error {
+	_db := r.DB(ctx)
+	if len(fields) > 0 {
+		_db = _db.Select(fields)
 	}
-	return nil
+	return _db.Where("id = ?", m.ID).Updates(m).Error
 }
 
-func (r *serverRepository) UpdateFields(ctx context.Context, m *model.Server, fields ...string) error {
-	if err := r.DB(ctx).Select(fields).Where("id = ?", m.ID).
-		Updates(m).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *serverRepository) GetByID(ctx context.Context, id int64) (*model.Server, error) {
-	var m model.Server
-	if err := r.DB(ctx).Where("id = ?", id).First(&m).Error; err != nil {
-		//if errors.Is(err, gorm.ErrRecordNotFound) {
-		//	return nil, errcode.ErrNotFound
-		//}
-		return nil, err
-	}
-	return &m, nil
+func (r *serverRepository) GetByID(ctx context.Context, id int64) (m *model.Server, err error) {
+	err = r.DB(ctx).Where("id = ?", id).First(&m).Error
+	return
 }
 
 func (r *serverRepository) GetBySpaceAndIDs(ctx context.Context, spaceId int64, ids []int64) (res []model.Server, err error) {

@@ -9,8 +9,7 @@ import (
 type DeployRepository interface {
 	List(ctx context.Context, req *deploy.ListReq) (total int64, list []*model.Task, err error)
 	Create(ctx context.Context, m *model.Task) error
-	Update(ctx context.Context, user *model.Task) error
-	UpdateFields(ctx context.Context, m *model.Task, fields ...string) error
+	Update(ctx context.Context, m *model.Task, fields ...string) error
 	GetByID(ctx context.Context, id int64) (*model.Task, error)
 	DeleteByID(ctx context.Context, id int64) error
 }
@@ -41,36 +40,20 @@ func (r *deployRepository) List(ctx context.Context, req *deploy.ListReq) (total
 }
 
 func (r *deployRepository) Create(ctx context.Context, m *model.Task) error {
-	if err := r.DB(ctx).Create(m).Error; err != nil {
-		return err
-	}
-	return nil
+	return r.DB(ctx).Create(m).Error
 }
 
-func (r *deployRepository) Update(ctx context.Context, m *model.Task) error {
-	if err := r.DB(ctx).Save(m).Error; err != nil {
-		return err
+func (r *deployRepository) Update(ctx context.Context, m *model.Task, fields ...string) error {
+	_db := r.DB(ctx)
+	if len(fields) > 0 {
+		_db = _db.Select(fields)
 	}
-	return nil
+	return _db.Where("id = ?", m.ID).Updates(m).Error
 }
 
-func (r *deployRepository) UpdateFields(ctx context.Context, m *model.Task, fields ...string) error {
-	if err := r.DB(ctx).Select(fields).Where("id = ?", m.ID).
-		Updates(m).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *deployRepository) GetByID(ctx context.Context, id int64) (*model.Task, error) {
-	var m model.Task
-	if err := r.DB(ctx).Where("id = ?", id).Preload("Servers").First(&m).Error; err != nil {
-		//if errors.Is(err, gorm.ErrRecordNotFound) {
-		//	return nil, errcode.ErrNotFound
-		//}
-		return nil, err
-	}
-	return &m, nil
+func (r *deployRepository) GetByID(ctx context.Context, id int64) (m *model.Task, err error) {
+	err = r.DB(ctx).Where("id = ?", id).Preload("Servers").First(&m).Error
+	return
 }
 
 func (r *deployRepository) DeleteByID(ctx context.Context, id int64) error {

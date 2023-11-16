@@ -31,14 +31,17 @@ func NewWire(logger *zap.Logger, assetsHandler *handler.AssetsHandler, config *d
 		return nil, nil, err
 	}
 	repositoryRepository := repository.NewRepository(gormDB, logger)
-	userRepository := repository.NewUserRepository(repositoryRepository)
+	memberRepository := repository.NewMemberRepository(repositoryRepository)
 	handlerHandler := handler.NewHandler(logger)
 	transaction := repository.NewTransaction(repositoryRepository)
 	sidSid := sid.NewSid()
 	serviceService := service.NewService(transaction, logger, sidSid, jwtJWT)
-	userService := service.NewUserService(serviceService, userRepository)
-	userHandler := handler.NewUserHandler(handlerHandler, userService)
+	userRepository := repository.NewUserRepository(repositoryRepository)
 	spaceRepository := repository.NewSpaceRepository(repositoryRepository)
+	userService := service.NewUserService(serviceService, userRepository, memberRepository, spaceRepository)
+	userHandler := handler.NewUserHandler(handlerHandler, userService)
+	memberService := service.NewMemberService(serviceService, memberRepository, userRepository)
+	memberHandler := handler.NewMemberHandler(handlerHandler, memberService)
 	spaceService := service.NewSpaceService(serviceService, spaceRepository)
 	spaceHandler := handler.NewSpaceHandler(handlerHandler, spaceService)
 	serverRepository := repository.NewServerRepository(repositoryRepository)
@@ -59,7 +62,7 @@ func NewWire(logger *zap.Logger, assetsHandler *handler.AssetsHandler, config *d
 	deployService := service.NewDeployService(serviceService, deployRepository, projectRepository, serverRepository, sshSsh, repos)
 	deployHandler := handler.NewDeployHandler(handlerHandler, deployService)
 	commonHandler := handler.NewCommonHandler(handlerHandler)
-	httpServer := server.NewHTTPServer(logger, jwtJWT, httpConfig, assetsHandler, userRepository, userHandler, spaceHandler, serverHandler, environmentHandler, projectHandler, deployHandler, commonHandler)
+	httpServer := server.NewHTTPServer(logger, jwtJWT, httpConfig, assetsHandler, memberRepository, userHandler, memberHandler, spaceHandler, serverHandler, environmentHandler, projectHandler, deployHandler, commonHandler)
 	job := server.NewJob(logger)
 	appApp := newApp(httpServer, job)
 	return appApp, func() {
@@ -70,11 +73,11 @@ func NewWire(logger *zap.Logger, assetsHandler *handler.AssetsHandler, config *d
 
 var pkgSet = wire.NewSet(db.NewDB, ssh.NewSSH, repo.NewRepos)
 
-var repositorySet = wire.NewSet(repository.NewRepository, repository.NewTransaction, repository.NewUserRepository, repository.NewEnvironmentRepository, repository.NewSpaceRepository, repository.NewServerRepository, repository.NewProjectRepository, repository.NewDeployRepository)
+var repositorySet = wire.NewSet(repository.NewRepository, repository.NewTransaction, repository.NewUserRepository, repository.NewEnvironmentRepository, repository.NewSpaceRepository, repository.NewServerRepository, repository.NewProjectRepository, repository.NewDeployRepository, repository.NewMemberRepository)
 
-var serviceSet = wire.NewSet(service.NewService, service.NewUserService, service.NewServerService, service.NewEnvironmentService, service.NewSpaceService, service.NewProjectService, service.NewDeployService)
+var serviceSet = wire.NewSet(service.NewService, service.NewUserService, service.NewServerService, service.NewEnvironmentService, service.NewSpaceService, service.NewProjectService, service.NewDeployService, service.NewMemberService)
 
-var handlerSet = wire.NewSet(handler.NewHandler, handler.NewUserHandler, handler.NewEnvironmentHandler, handler.NewSpaceHandler, handler.NewServerHandler, handler.NewProjectHandler, handler.NewDeployHandler, handler.NewCommonHandler)
+var handlerSet = wire.NewSet(handler.NewHandler, handler.NewUserHandler, handler.NewEnvironmentHandler, handler.NewSpaceHandler, handler.NewServerHandler, handler.NewProjectHandler, handler.NewDeployHandler, handler.NewCommonHandler, handler.NewMemberHandler)
 
 var serverSet = wire.NewSet(server.NewHTTPServer, server.NewJob, server.NewTask)
 

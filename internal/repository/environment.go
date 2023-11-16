@@ -2,18 +2,14 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"gorm.io/gorm"
 	"yema.dev/api/environment"
-	"yema.dev/internal/errcode"
 	"yema.dev/internal/model"
 )
 
 type EnvironmentRepository interface {
 	List(ctx context.Context, req *environment.ListReq) (total int64, res []*model.Environment, err error)
 	Create(ctx context.Context, m *model.Environment) error
-	Update(ctx context.Context, user *model.Environment) error
-	UpdateFields(ctx context.Context, m *model.Environment, fields ...string) error
+	Update(ctx context.Context, m *model.Environment, fields ...string) error
 	GetByID(ctx context.Context, id int64) (*model.Environment, error)
 	DeleteByID(ctx context.Context, id int64) error
 	GetProjectCount(ctx context.Context, id int64) int64
@@ -43,36 +39,20 @@ func (r *environmentRepository) List(ctx context.Context, req *environment.ListR
 }
 
 func (r *environmentRepository) Create(ctx context.Context, m *model.Environment) error {
-	if err := r.DB(ctx).Create(m).Error; err != nil {
-		return err
-	}
-	return nil
+	return r.DB(ctx).Create(m).Error
 }
 
-func (r *environmentRepository) Update(ctx context.Context, m *model.Environment) error {
-	if err := r.DB(ctx).Save(m).Error; err != nil {
-		return err
+func (r *environmentRepository) Update(ctx context.Context, m *model.Environment, fields ...string) error {
+	_db := r.DB(ctx)
+	if len(fields) > 0 {
+		_db = _db.Select(fields)
 	}
-	return nil
+	return _db.Where("id = ?", m.ID).Updates(m).Error
 }
 
-func (r *environmentRepository) UpdateFields(ctx context.Context, m *model.Environment, fields ...string) error {
-	if err := r.DB(ctx).Select(fields).Where("id = ?", m.ID).
-		Updates(m).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *environmentRepository) GetByID(ctx context.Context, id int64) (*model.Environment, error) {
-	var m model.Environment
-	if err := r.DB(ctx).Where("id = ?", id).First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errcode.ErrNotFound
-		}
-		return nil, err
-	}
-	return &m, nil
+func (r *environmentRepository) GetByID(ctx context.Context, id int64) (m *model.Environment, err error) {
+	err = r.DB(ctx).Where("id = ?", id).First(&m).Error
+	return
 }
 
 func (r *environmentRepository) DeleteByID(ctx context.Context, id int64) error {

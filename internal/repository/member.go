@@ -12,6 +12,8 @@ type MemberRepository interface {
 	Store(ctx context.Context, m *model.Member) error
 	GetByID(ctx context.Context, id int64) (*model.Member, error)
 	DeleteByID(ctx context.Context, id int64) error
+	GetWithSpacesByUserId(ctx context.Context, userId int64) (res []*model.Member, err error)
+	GetBySpaceAndUserId(ctx context.Context, spaceId, userId int64) (res *model.Member, err error)
 }
 
 func NewMemberRepository(r *Repository) MemberRepository {
@@ -51,4 +53,15 @@ func (r *memberRepository) GetByID(ctx context.Context, id int64) (*model.Member
 
 func (r *memberRepository) DeleteByID(ctx context.Context, id int64) error {
 	return r.DB(ctx).Delete(&model.Member{}, id).Error
+}
+
+// GetWithSpacesByUserId 获取一个用户所有空间信息
+func (r *memberRepository) GetWithSpacesByUserId(ctx context.Context, userId int64) (res []*model.Member, err error) {
+	err = r.DB(ctx).Where("user_id = ?", userId).Preload("Space").Find(&res).Error
+	return
+}
+
+func (r *memberRepository) GetBySpaceAndUserId(ctx context.Context, spaceId, userId int64) (res *model.Member, err error) {
+	err = r.DB(ctx).Where(model.Member{SpaceId: spaceId, UserId: userId}).First(&res).Error
+	return
 }

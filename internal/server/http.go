@@ -16,8 +16,9 @@ func NewHTTPServer(
 	jwt *jwt.JWT,
 	conf *http.Config,
 	assetsHandler *handler.AssetsHandler,
-	userRepo repository.UserRepository,
+	memberRepo repository.MemberRepository,
 	userHandler *handler.UserHandler,
+	memberHandler *handler.MemberHandler,
 	spaceHandler *handler.SpaceHandler,
 	serverHandler *handler.ServerHandler,
 	environmentHandler *handler.EnvironmentHandler,
@@ -52,9 +53,9 @@ func NewHTTPServer(
 		authRouter.POST("/logout", userHandler.Logout)
 		authRouter.GET("/user_info", userHandler.Profile)
 
-		superPermRouter := authRouter.Group("", middleware.Permission(userRepo, model.RoleSuper))
-		ownerPermRouter := authRouter.Group("", middleware.Permission(userRepo, model.RoleOwner))
-		masterPermRouter := authRouter.Group("", middleware.Permission(userRepo, model.RoleMaster))
+		superPermRouter := authRouter.Group("", middleware.Permission(memberRepo, model.RoleSuper))
+		ownerPermRouter := authRouter.Group("", middleware.Permission(memberRepo, model.RoleOwner))
+		masterPermRouter := authRouter.Group("", middleware.Permission(memberRepo, model.RoleMaster))
 
 		//用户管理
 		{
@@ -67,9 +68,9 @@ func NewHTTPServer(
 
 		//成员管理
 		{
-			//ownerPermRouter.GET("/member", ctl.List)
-			//ownerPermRouter.POST("/member", ctl.Store)
-			//ownerPermRouter.DELETE("/member/:id", ctl.Delete)
+			ownerPermRouter.GET("/member", memberHandler.List)
+			ownerPermRouter.POST("/member", memberHandler.Store)
+			ownerPermRouter.DELETE("/member/:id", memberHandler.Delete)
 		}
 
 		//空间管理, super访问权限

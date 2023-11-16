@@ -9,7 +9,7 @@ import (
 	"yema.dev/internal/repository"
 )
 
-func Permission(userRepo repository.UserRepository, role model.Role) func(ctx *gin.Context) {
+func Permission(memberRepo repository.MemberRepository, role model.Role) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		log.Println("middleware Permission start")
 		userId := handler.UserId(ctx)
@@ -19,7 +19,7 @@ func Permission(userRepo repository.UserRepository, role model.Role) func(ctx *g
 				_ = ctx.AbortWithError(400, errors.New("未选择空间"))
 				return
 			}
-			member, err := userRepo.GetMemberBySpaceAndUserId(ctx, spaceId, userId)
+			member, err := memberRepo.GetBySpaceAndUserId(ctx, spaceId, userId)
 			if err != nil {
 				_ = ctx.AbortWithError(400, errors.New("空间选择错误"))
 				return

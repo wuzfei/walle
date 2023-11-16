@@ -40,7 +40,7 @@ func (s *spaceService) Create(ctx context.Context, req *space.CreateReq) error {
 }
 
 func (s *spaceService) Update(ctx context.Context, req *space.UpdateReq) error {
-	return s.spaceRepo.UpdateFields(ctx, &model.Space{
+	return s.spaceRepo.Update(ctx, &model.Space{
 		ID:     req.ID,
 		Name:   req.Name,
 		Status: req.Status,

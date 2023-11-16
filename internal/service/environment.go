@@ -55,7 +55,7 @@ func (s *environmentService) Update(ctx context.Context, req *environment.Update
 	m.Status = req.Status
 	m.Description = req.Description
 	m.Color = req.Color
-	return s.environmentRepo.UpdateFields(ctx, m, req.Fields()...)
+	return s.environmentRepo.Update(ctx, m, req.Fields()...)
 }
 
 // Delete 环境下必须没有项目了才能删除

@@ -84,7 +84,7 @@ func (s *serverService) Update(ctx context.Context, req *server.UpdateReq) error
 	m.Host = req.Host
 	m.Port = req.Port
 	m.Description = req.Description
-	return s.serverRepo.UpdateFields(ctx, &m, req.Fields()...)
+	return s.serverRepo.Update(ctx, &m, req.Fields()...)
 }
 
 // Delete 删除
@@ -143,11 +143,11 @@ func (s *serverService) Check(ctx context.Context, req *api.SpaceWithId) error {
 	s.log.Debug("CheckConnect", zap.String("cmd", "pwd"), zap.ByteString("output", output), zap.Error(err))
 	if err != nil && m.Status.IsEnable() {
 		m.Status = field.StatusDisable
-		return s.serverRepo.UpdateFields(ctx, m, "status")
+		return s.serverRepo.Update(ctx, m, "status")
 	}
 	if err == nil && m.Status.IsDisable() {
 		m.Status = field.StatusEnable
-		return s.serverRepo.UpdateFields(ctx, m, "status")
+		return s.serverRepo.Update(ctx, m, "status")
 	}
 	return err
 }
@@ -177,7 +177,7 @@ func (s *serverService) SetAuthorized(ctx context.Context, req *server.SetAuthor
 	s.log.Debug("Setting", zap.String("cmd", runCmd), zap.ByteString("output", output), zap.Error(err))
 	if err == nil {
 		m.Status = field.StatusEnable
-		if _err := s.serverRepo.UpdateFields(ctx, m, "status"); _err != nil {
+		if _err := s.serverRepo.Update(ctx, m, "status"); _err != nil {
 			s.log.Error("更新数据库失败", zap.Int64("server_id", m.ID), zap.Int("status", field.StatusEnable))
 		}
 	}

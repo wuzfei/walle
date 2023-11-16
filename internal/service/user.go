@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/wuzfei/go-helper/slices"
 	"golang.org/x/crypto/bcrypt"
 	"yema.dev/api"
+	"yema.dev/api/space"
 	"yema.dev/api/user"
 	"yema.dev/internal/errcode"
 	"yema.dev/internal/model"
@@ -24,15 +26,19 @@ type UserService interface {
 	Delete(ctx context.Context, id int64) error
 }
 
-func NewUserService(service *Service, userRepo repository.UserRepository) UserService {
+func NewUserService(service *Service, userRepo repository.UserRepository, memberRepo repository.MemberRepository, spaceRepo repository.SpaceRepository) UserService {
 	return &userService{
-		userRepo: userRepo,
-		Service:  service,
+		userRepo:   userRepo,
+		memberRepo: memberRepo,
+		spaceRepo:  spaceRepo,
+		Service:    service,
 	}
 }
 
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo   repository.UserRepository
+	memberRepo repository.MemberRepository
+	spaceRepo  repository.SpaceRepository
 	*Service
 }
 
@@ -70,7 +76,7 @@ func (s *userService) Login(ctx context.Context, req *user.LoginReq) (*user.Logi
 			return nil, err
 		}
 		m.RememberToken = res.RefreshToken
-		if err = s.userRepo.UpdateFields(ctx, m, "remember_token"); err != nil {
+		if err = s.userRepo.Update(ctx, m, "remember_token"); err != nil {
 			return nil, err
 		}
 	}
@@ -152,7 +158,7 @@ func (s *userService) RefreshToken(ctx context.Context, req *user.RefreshTokenRe
 		return nil, err
 	}
 	m.RememberToken = res.RefreshToken
-	if err = s.userRepo.UpdateFields(ctx, m, "remember_token"); err != nil {
+	if err = s.userRepo.Update(ctx, m, "remember_token"); err != nil {
 		return nil, err
 	}
 	return
@@ -165,7 +171,7 @@ func (s *userService) Logout(ctx context.Context, userId int64) (err error) {
 		return
 	}
 	m.RememberToken = ""
-	if err = s.userRepo.UpdateFields(ctx, m, "remember_token"); err != nil {
+	if err = s.userRepo.Update(ctx, m, "remember_token"); err != nil {
 		return err
 	}
 	return nil
@@ -227,7 +233,7 @@ func (s *userService) Delete(ctx context.Context, id int64) error {
 func (s *userService) spacesItems(ctx context.Context, userId int64) (user.SpaceItems, error) {
 	spaceItems := make(user.SpaceItems, 0)
 	if !model.IsSuperUser(userId) {
-		res, err := s.userRepo.GetMemberSpaces(ctx, userId)
+		res, err := s.memberRepo.GetWithSpacesByUserId(ctx, userId)
 		if err != nil {
 			return spaceItems, err
 		}
@@ -243,19 +249,20 @@ func (s *userService) spacesItems(ctx context.Context, userId int64) (user.Space
 		}
 	} else {
 		//超级管理员的处理
-		//var res []*model.Space
-		//err := srv.db.Find(&res).Error
-		//if err != nil {
-		//	return spaceItems, err
-		//}
-		//spaceItems = slices.Map(res, func(item *model.Space, k int) *SpaceItem {
-		//	return &SpaceItem{
-		//		SpaceId:   item.ID,
-		//		SpaceName: item.Name,
-		//		Status:    item.Status,
-		//		Role:      string(model.RoleSuper),
-		//	}
-		//})
+		p := space.ListReq{}
+		p.Infinite()
+		_, res, err := s.spaceRepo.List(ctx, &p)
+		if err != nil {
+			return spaceItems, err
+		}
+		spaceItems = slices.Map(res, func(item *model.Space, k int) *user.SpaceItem {
+			return &user.SpaceItem{
+				SpaceId:   item.ID,
+				SpaceName: item.Name,
+				Status:    item.Status,
+				Role:      string(model.RoleSuper),
+			}
+		})
 	}
 	return spaceItems, nil
 }

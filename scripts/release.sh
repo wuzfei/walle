@@ -28,6 +28,8 @@ else
   RELEASE=false
 fi
 
+CGO_ENABLED=0
+
 echo Running "go $@"
 exec go "$1" -ldflags \
   "-w -s -X yema.dev/pkg/version.buildTimestamp=$TIMESTAMP
