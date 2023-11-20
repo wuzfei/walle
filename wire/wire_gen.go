@@ -7,6 +7,7 @@
 package wire
 
 import (
+	"context"
 	"github.com/google/wire"
 	"go.uber.org/zap"
 	"yema.dev/internal/handler"
@@ -24,7 +25,7 @@ import (
 
 // Injectors from wire.go:
 
-func NewWire(logger *zap.Logger, assetsHandler *handler.AssetsHandler, config *db.Config, sshConfig *ssh.Config, repoConfig *repo.Config, httpConfig *http.Config, jwtConfig *jwt.Config) (*app.App, func(), error) {
+func NewWire(contextContext context.Context, logger *zap.Logger, assetsHandler *handler.AssetsHandler, config *db.Config, sshConfig *ssh.Config, repoConfig *repo.Config, httpConfig *http.Config, jwtConfig *jwt.Config) (*app.App, func(), error) {
 	jwtJWT := jwt.NewJwt(jwtConfig)
 	gormDB, err := db.NewDB(config, logger)
 	if err != nil {

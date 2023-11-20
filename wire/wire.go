@@ -4,6 +4,7 @@
 package wire
 
 import (
+	"context"
 	"github.com/google/wire"
 	"go.uber.org/zap"
 	"yema.dev/internal/handler"
@@ -74,7 +75,7 @@ func newApp(httpServer *http.Server, job *server.Job) *app.App {
 	)
 }
 
-func NewWire(*zap.Logger, *handler.AssetsHandler, *db.Config, *ssh.Config, *repo.Config, *http.Config, *jwt.Config) (*app.App, func(), error) {
+func NewWire(context.Context, *zap.Logger, *handler.AssetsHandler, *db.Config, *ssh.Config, *repo.Config, *http.Config, *jwt.Config) (*app.App, func(), error) {
 	panic(wire.Build(
 		pkgSet,
 		repositorySet,

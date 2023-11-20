@@ -13,9 +13,9 @@ type Sftp struct {
 
 // Close 关闭终端会话
 func (s *Sftp) Close() error {
-	//defer func() {
-	//	s.client.Done()
-	//}()
+	defer func() {
+		s.client.Done()
+	}()
 	return s.sftpClient.Close()
 }
 

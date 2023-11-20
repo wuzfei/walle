@@ -115,7 +115,7 @@ func main() {
 func cmdRun(cmd *cobra.Command, args []string) (err error) {
 	ctx, _ := process.Ctx(cmd)
 	_log := log.NewLog(&migrationCfg.Log)
-	app, fn, err := wire.NewWire(_log, handler.NewAssetsHandler(&web, &webAssets), &cfg.Db, &cfg.Ssh, &cfg.Repo, &cfg.Api, &cfg.JWT)
+	app, fn, err := wire.NewWire(ctx, _log, handler.NewAssetsHandler(&web, &webAssets), &cfg.Db, &cfg.Ssh, &cfg.Repo, &cfg.Api, &cfg.JWT)
 	if err != nil {
 		return err
 	}
